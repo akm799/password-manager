@@ -16,6 +16,12 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     private val cancelChar = 'c'
     private val cancelString = "$cancelChar"
 
+    private val noChar = 'n'
+    private val yesChar = 'y'
+    private val noString = "$noChar"
+    private val yesString = "$yesChar"
+    private val confirmStrings = setOf(noString, yesString)
+
     private var indexedCredentials: Map<Int, Credentials>
     private var indexedSelectedItems: Map<Int, Map.Entry<String, String>>? = null
 
@@ -26,6 +32,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     private val clipboardService: ClipboardService = ClipboardServiceImpl()
 
     private var change = false
+    private var confirmationMode = false
 
     init {
         indexedCredentials = indexItems(credentials)
@@ -41,7 +48,9 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         get() = determineState()
 
     private fun determineState(): DisplayState {
-        if (newCredentialsName != null) {
+        if (confirmationMode) {
+            return DisplayState.CONFIRM
+        } else if (newCredentialsName != null) {
             return DisplayState.ADD
         } else if (indexedSelectedItems != null) {
             return DisplayState.SELECTED
@@ -77,6 +86,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         when (state) {
             DisplayState.ALL -> enterAddMode()
             DisplayState.ADD -> processCredentialsItemEntry(command)
+            DisplayState.CONFIRM -> processOverwriteConfirmationEntry(command)
         }
     }
 
@@ -92,6 +102,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         return when (state) {
             DisplayState.ALL -> addString.equals(command, ignoreCase = true)
             DisplayState.ADD -> true
+            DisplayState.CONFIRM -> confirmStrings.contains(command.toLowerCase()) || confirmStrings.contains(command.toUpperCase())
             else -> false
         }
     }
@@ -147,12 +158,30 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
 
     private fun processNewCredentialsCompleteEntry() {
         if (haveNewCredentialsToAdd()) {
-            change = true
-            addNewCredentials(Credentials(newCredentialsName!!, LinkedHashMap(newCredentials)))
-            exitAddMode("Credentials for '$newCredentialsName' have been added.")
+            if (isOverwrite()) {
+                enterOverwriteConfirmationMode()
+            } else {
+                addNewCredentialsAndExitAddMode()
+            }
         } else {
             cancelAddMode()
         }
+    }
+
+    private fun processOverwriteConfirmationEntry(command: String) {
+        confirmationMode = false
+        if (noString.equals(command, ignoreCase = true)) {
+            cancelAddMode()
+        } else if (yesString.equals(command, ignoreCase = true)) {
+            addNewCredentialsAndExitAddMode(true)
+        }
+    }
+
+    private fun addNewCredentialsAndExitAddMode(overwrite: Boolean = false) {
+        change = true
+        val action = if (overwrite) "overwritten" else "added"
+        addNewCredentials(Credentials(newCredentialsName!!, LinkedHashMap(newCredentials)))
+        exitAddMode("Credentials for '$newCredentialsName' have been $action.")
     }
 
     private fun addCredentialsItem(line: String) {
@@ -168,8 +197,12 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
 
     private fun addNewCredentials(credentials: Credentials) {
         val existingCredentials = TreeSet(indexedCredentials.values)
-        existingCredentials.add(credentials)
+        val overwrite = existingCredentials.firstOrNull { it.name == credentials.name }
+        if (overwrite != null) {
+            existingCredentials.remove(overwrite) // If we are going to overwrite any credentials then remove the old credentials for the overwrite to take effect.
+        }
 
+        existingCredentials.add(credentials)
         indexedCredentials = indexItems(existingCredentials)
     }
 
@@ -181,6 +214,8 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         return newCredentialsName?.let { it.isNotEmpty() && it.isNotBlank() } ?: false
     }
 
+    private fun isOverwrite() = indexedCredentials.values.asSequence().map { it.name }.contains(newCredentialsName)
+
     private fun cancelAddMode() {
         exitAddMode("No new credentials added.")
     }
@@ -190,6 +225,11 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         newCredentials.clear()
         newCredentialsName = null
         show()
+    }
+
+    private fun enterOverwriteConfirmationMode() {
+        confirmationMode = true
+        println("Overwrite existing credentials? Enter 'y' to confirm the overwrite or 'n' to cancel.")
     }
 
     override fun onExit() {
