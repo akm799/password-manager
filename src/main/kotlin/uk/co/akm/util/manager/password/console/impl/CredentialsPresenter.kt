@@ -10,11 +10,16 @@ import java.util.*
  * Created by Thanos Mavroidis on 24/09/2018.
  */
 class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexedConsolePresenter<DisplayState>() {
+    private val noIndex = -1
+
     private val addChar = 'a'
     private val addString = "$addChar"
 
     private val cancelChar = 'c'
     private val cancelString = "$cancelChar"
+
+    private val deleteChar = 'd'
+    private val deleteString = "$deleteChar"
 
     private val noChar = 'n'
     private val yesChar = 'y'
@@ -30,6 +35,8 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     private var newCredentials = LinkedHashMap<String, String>()
 
     private val clipboardService: ClipboardService = ClipboardServiceImpl()
+
+    private var deleteCredentialsIndex: Int? = null
 
     private var change = false
     private var confirmationMode = false
@@ -54,6 +61,8 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
             return DisplayState.ADD
         } else if (indexedSelectedItems != null) {
             return DisplayState.SELECTED
+        } else if (deleteCredentialsIndex != null) {
+            return DisplayState.DELETE
         } else {
             return DisplayState.ALL
         }
@@ -70,8 +79,8 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         if (indexedCredentials.isEmpty()) {
             println("No credentials entered. Press '$addChar' to add or '$exitChar' to exit.")
         } else {
-            indexedCredentials.entries.forEach { println("${it.key}) ${it.value}") }
-            println("Select existing credentials or press '$addChar' to add or '$exitChar' to exit.")
+            showCredentialsList()
+            println("Select existing credentials or press '$addChar' to add, '$deleteChar' to delete or '$exitChar' to exit.")
         }
     }
 
@@ -79,20 +88,22 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         when (state) {
             DisplayState.ALL -> processCredentialsSelection(selectionIndex)
             DisplayState.SELECTED -> processCredentialsItemSelection(selectionIndex)
+            DisplayState.DELETE -> processDeleteCredentialsItemSelection(selectionIndex)
         }
     }
 
     override fun showCommand(state: DisplayState, command: String) {
         when (state) {
-            DisplayState.ALL -> enterAddMode()
+            DisplayState.ALL -> enterAddOrDeleteMode(command)
             DisplayState.ADD -> processCredentialsItemEntry(command)
-            DisplayState.CONFIRM -> processOverwriteConfirmationEntry(command)
+            DisplayState.CONFIRM -> processPositiveConfirmationEntry(command)
         }
     }
 
     override fun selectionIsValid(state: DisplayState, selectionIndex: Int): Boolean {
         return when (state) {
             DisplayState.ALL -> indexedCredentials.containsKey(selectionIndex)
+            DisplayState.DELETE -> indexedCredentials.containsKey(selectionIndex)
             DisplayState.SELECTED -> indexedSelectedItems?.containsKey(selectionIndex) ?: false
             else -> false
         }
@@ -100,7 +111,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
 
     override fun stringCommandIsValid(state: DisplayState, command: String): Boolean {
         return when (state) {
-            DisplayState.ALL -> addString.equals(command, ignoreCase = true)
+            DisplayState.ALL -> addString.equals(command, ignoreCase = true) || deleteString.equals(command, ignoreCase = true)
             DisplayState.ADD -> true
             DisplayState.CONFIRM -> confirmStrings.contains(command.toLowerCase()) || confirmStrings.contains(command.toUpperCase())
             else -> false
@@ -116,7 +127,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     }
 
     private fun showSelectedCredentials(selectedName: String, selectedItems: Map<Int, Map.Entry<String, String>>) {
-        println("Credentials for $selectedName")
+        println("Credentials for $selectedName:")
         selectedItems.forEach {  println("${it.key}) ${it.value.key}") }
         println("Select credentials item to copy to clipboard, '$backChar' to go back to display all the credentials or '$exitChar' to exit.")
     }
@@ -130,13 +141,12 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         }
     }
 
-    private fun <T> indexItems(items: Collection<T>): Map<Int, T> {
-        val indexedItems = LinkedHashMap<Int, T>(items.size)
-
-        var i = 1 // This is for a user display so the first index is 1 and not 0.
-        items.forEach { indexedItems[i++] = it }
-
-        return indexedItems
+    private fun enterAddOrDeleteMode(command: String) {
+        if (addString.equals(command, ignoreCase = true)) {
+            enterAddMode()
+        } else if (deleteString.equals(command, ignoreCase = true)) {
+            enterDeleteMode()
+        }
     }
 
     private fun enterAddMode() {
@@ -150,7 +160,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         if (line.isEmpty() || line.isBlank()) {
             processNewCredentialsCompleteEntry()
         } else if (cancelString.equals(line, ignoreCase = true)) {
-            cancelAddMode()
+            cancelAddOrDeleteMode()
         } else {
             addCredentialsItem(line.trim())
         }
@@ -164,16 +174,20 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
                 addNewCredentialsAndExitAddMode()
             }
         } else {
-            cancelAddMode()
+            cancelAddOrDeleteMode()
         }
     }
 
-    private fun processOverwriteConfirmationEntry(command: String) {
+    private fun processPositiveConfirmationEntry(command: String) {
         confirmationMode = false
         if (noString.equals(command, ignoreCase = true)) {
-            cancelAddMode()
+            cancelAddOrDeleteMode()
         } else if (yesString.equals(command, ignoreCase = true)) {
-            addNewCredentialsAndExitAddMode(true)
+            if (deleteCredentialsIndex == null) {
+                addNewCredentialsAndExitAddMode(true)
+            } else {
+                deleteCredentialsAndExitDeleteMode()
+            }
         }
     }
 
@@ -181,7 +195,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         change = true
         val action = if (overwrite) "overwritten" else "added"
         addNewCredentials(Credentials(newCredentialsName!!, LinkedHashMap(newCredentials)))
-        exitAddMode("Credentials for '$newCredentialsName' have been $action.")
+        exitAddOrDeleteMode("Credentials for '$newCredentialsName' have been $action.")
     }
 
     private fun addCredentialsItem(line: String) {
@@ -216,20 +230,60 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
 
     private fun isOverwrite() = indexedCredentials.values.asSequence().map { it.name }.contains(newCredentialsName)
 
-    private fun cancelAddMode() {
-        exitAddMode("No new credentials added.")
-    }
-
-    private fun exitAddMode(message: String) {
-        println(message)
-        newCredentials.clear()
-        newCredentialsName = null
-        show()
+    private fun cancelAddOrDeleteMode() {
+        val message = if (deleteCredentialsIndex == null) "No new credentials added." else "No credentials deleted."
+        exitAddOrDeleteMode(message)
     }
 
     private fun enterOverwriteConfirmationMode() {
         confirmationMode = true
         println("Overwrite existing credentials? Enter 'y' to confirm the overwrite or 'n' to cancel.")
+    }
+
+    private fun enterDeleteMode() {
+        deleteCredentialsIndex = noIndex
+        showCredentialsList()
+        println("Select credentials to delete.")
+    }
+
+    private fun processDeleteCredentialsItemSelection(selectionIndex: Int) {
+        deleteCredentialsIndex = selectionIndex
+        confirmationMode = true
+        val name = indexedCredentials[selectionIndex]?.name
+        println("Delete credentials for '$name'? Enter 'y' to confirm the overwrite or 'n' to cancel.")
+    }
+
+    private fun deleteCredentialsAndExitDeleteMode() {
+        change = true
+        deleteCredentials()
+        val name = indexedCredentials[deleteCredentialsIndex]?.name
+        exitAddOrDeleteMode("Credentials for '$name' have been deleted.")
+    }
+
+    private fun deleteCredentials() {
+        val remaining = indexedCredentials.entries.filter { it.key != deleteCredentialsIndex }.map { it.value }
+        indexedCredentials = indexItems(remaining)
+    }
+
+    private fun exitAddOrDeleteMode(message: String) {
+        println(message)
+        deleteCredentialsIndex = null
+        newCredentials.clear()
+        newCredentialsName = null
+        show()
+    }
+
+    private fun <T> indexItems(items: Collection<T>): Map<Int, T> {
+        val indexedItems = LinkedHashMap<Int, T>(items.size)
+
+        var i = 1 // This is for a user display so the first index is 1 and not 0.
+        items.forEach { indexedItems[i++] = it }
+
+        return indexedItems
+    }
+
+    private fun showCredentialsList() {
+        indexedCredentials.entries.forEach { println("${it.key}) ${it.value}") }
     }
 
     override fun onExit() {
