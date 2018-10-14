@@ -21,11 +21,16 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     private val deleteChar = 'd'
     private val deleteString = "$deleteChar"
 
+    private val helpChar = 'h'
+    private val helpString = "$helpChar"
+
     private val noChar = 'n'
     private val yesChar = 'y'
     private val noString = "$noChar"
     private val yesString = "$yesChar"
     private val confirmStrings = setOf(noString, yesString)
+
+    private val helpMessage = "Example help mesage."
 
     private var indexedCredentials: Map<Int, Credentials>
     private var indexedSelectedItems: Map<Int, Map.Entry<String, String>>? = null
@@ -95,7 +100,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     override fun showCommand(state: DisplayState, command: String) {
         when (state) {
             DisplayState.ALL -> enterAddOrDeleteMode(command)
-            DisplayState.ADD -> processCredentialsItemEntry(command)
+            DisplayState.ADD -> processAddModeInput(command)
             DisplayState.CONFIRM -> processPositiveConfirmationEntry(command)
         }
     }
@@ -153,7 +158,15 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         indexedSelectedItems = null
         newCredentials.clear()
         newCredentialsName = ""
-        println("Enter the credential items in multiple lines and an empty line when you finish or enter '$cancelChar' to cancel.")
+        println("Enter the credential items in multiple lines and an empty line when you finish or enter '$cancelChar' to cancel. For an example, enter '$helpChar' or '$exitChar' to exit.")
+    }
+
+    private fun processAddModeInput(command: String) {
+        if (helpString.equals(command, ignoreCase = true)) {
+            println(helpMessage)
+        } else {
+            processCredentialsItemEntry(command)
+        }
     }
 
     private fun processCredentialsItemEntry(line: String) {
