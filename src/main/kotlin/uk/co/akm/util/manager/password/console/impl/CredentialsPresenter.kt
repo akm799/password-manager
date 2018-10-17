@@ -56,8 +56,10 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     }
 
     override fun back(state: DisplayState) {
-        if (state == DisplayState.SELECTED) {
-            show()
+        when (state) {
+            DisplayState.SELECTED -> { show() }
+            DisplayState.ADD, DisplayState.DELETE -> { cancelAddOrDeleteMode() }
+            else -> { println("Invalid 'back' command.") }
         }
     }
 
@@ -140,7 +142,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         indexedSelectedItems = null
         newCredentials.clear()
         newCredentialsName = ""
-        println("Enter the credential items in multiple lines and an empty line when you finish or enter '$cancelChar' to cancel. For an example, enter '$helpChar' or '$exitChar' to exit.")
+        println("Enter the credential items in multiple lines and an empty line when you finish or enter '$backChar' to go back and cancel the add operation. For an example, enter '$helpChar' or '$exitChar' to exit.")
     }
 
     private fun processAddModeInput(command: String) {
@@ -154,8 +156,6 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     private fun processCredentialsItemEntry(line: String) {
         if (line.isEmpty() || line.isBlank()) {
             processNewCredentialsCompleteEntry()
-        } else if (isCancelCommand(line)) {
-            cancelAddOrDeleteMode()
         } else {
             addCredentialsItem(line.trim())
         }
@@ -238,7 +238,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     private fun enterDeleteMode() {
         deleteCredentialsIndex = noIndex
         showCredentialsList()
-        println("Select credentials to delete.")
+        println("Select credentials to delete or enter '$backChar' to go back and cancel the delete operation.")
     }
 
     private fun processDeleteCredentialsItemSelection(selectionIndex: Int) {

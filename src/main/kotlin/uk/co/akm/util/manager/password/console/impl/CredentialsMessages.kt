@@ -10,9 +10,6 @@ import java.util.*
 val addChar = 'a'
 private val addString = "$addChar"
 
-val cancelChar = 'c'
-private val cancelString = "$cancelChar"
-
 val deleteChar = 'd'
 private val deleteString = "$deleteChar"
 
@@ -28,8 +25,6 @@ private val confirmStrings = setOf(noString, yesString)
 val helpMessage = "Example help mesage."
 
 fun isAddCommand(command: String) = isCommand(addString, command)
-
-fun isCancelCommand(command: String) = isCommand(cancelString, command)
 
 fun isDeleteCommand(command: String) = isCommand(deleteString, command)
 
