@@ -7,10 +7,6 @@ import uk.co.akm.util.manager.password.io.readInputLine
  * Created by Thanos Mavroidis on 25/09/2018.
  */
 abstract class AbstractConsolePresenter<S> {
-    val backChar = 'b'
-    val exitChar = 'e'
-    private val backString = "$backChar"
-    private val exitString = "$exitChar"
 
     abstract val state: S
 
@@ -27,14 +23,14 @@ abstract class AbstractConsolePresenter<S> {
 
         while (listen) {
             val command = readInputLine()
-            if (exitString.equals(command, ignoreCase = true)) {
+            if (isExitCommand(command)) {
                 listen = false
-            } else if (backString.equals(command, ignoreCase = true)) {
+            } else if (isBackCommand(command)) {
                 back(state)
             } else if (commandIsValid(state, command)) {
                 show(state, command)
             } else {
-                System.err.println("Invalid selection: '$command'.")
+                System.err.println(invalid(command))
             }
         }
 

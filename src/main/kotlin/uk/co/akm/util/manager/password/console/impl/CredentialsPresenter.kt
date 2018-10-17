@@ -3,6 +3,8 @@ package uk.co.akm.util.manager.password.console.impl
 import uk.co.akm.util.manager.password.clipboard.ClipboardService
 import uk.co.akm.util.manager.password.clipboard.ClipboardServiceImpl
 import uk.co.akm.util.manager.password.console.AbstractIndexedConsolePresenter
+import uk.co.akm.util.manager.password.console.backChar
+import uk.co.akm.util.manager.password.console.exitChar
 import uk.co.akm.util.manager.password.model.Credentials
 import java.util.*
 
@@ -11,26 +13,6 @@ import java.util.*
  */
 class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexedConsolePresenter<DisplayState>() {
     private val noIndex = -1
-
-    private val addChar = 'a'
-    private val addString = "$addChar"
-
-    private val cancelChar = 'c'
-    private val cancelString = "$cancelChar"
-
-    private val deleteChar = 'd'
-    private val deleteString = "$deleteChar"
-
-    private val helpChar = 'h'
-    private val helpString = "$helpChar"
-
-    private val noChar = 'n'
-    private val yesChar = 'y'
-    private val noString = "$noChar"
-    private val yesString = "$yesChar"
-    private val confirmStrings = setOf(noString, yesString)
-
-    private val helpMessage = "Example help mesage."
 
     private var indexedCredentials: Map<Int, Credentials>
     private var indexedSelectedItems: Map<Int, Map.Entry<String, String>>? = null
@@ -116,9 +98,9 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
 
     override fun stringCommandIsValid(state: DisplayState, command: String): Boolean {
         return when (state) {
-            DisplayState.ALL -> addString.equals(command, ignoreCase = true) || deleteString.equals(command, ignoreCase = true)
+            DisplayState.ALL -> isAddCommand(command) || isDeleteCommand(command)
             DisplayState.ADD -> true
-            DisplayState.CONFIRM -> confirmStrings.contains(command.toLowerCase()) || confirmStrings.contains(command.toUpperCase())
+            DisplayState.CONFIRM -> isConfirmCommand(command)
             else -> false
         }
     }
@@ -147,9 +129,9 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     }
 
     private fun enterAddOrDeleteMode(command: String) {
-        if (addString.equals(command, ignoreCase = true)) {
+        if (isAddCommand(command)) {
             enterAddMode()
-        } else if (deleteString.equals(command, ignoreCase = true)) {
+        } else if (isDeleteCommand(command)) {
             enterDeleteMode()
         }
     }
@@ -162,7 +144,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     }
 
     private fun processAddModeInput(command: String) {
-        if (helpString.equals(command, ignoreCase = true)) {
+        if (isHelpCommand(command)) {
             println(helpMessage)
         } else {
             processCredentialsItemEntry(command)
@@ -172,7 +154,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     private fun processCredentialsItemEntry(line: String) {
         if (line.isEmpty() || line.isBlank()) {
             processNewCredentialsCompleteEntry()
-        } else if (cancelString.equals(line, ignoreCase = true)) {
+        } else if (isCancelCommand(line)) {
             cancelAddOrDeleteMode()
         } else {
             addCredentialsItem(line.trim())
@@ -193,9 +175,9 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
 
     private fun processPositiveConfirmationEntry(command: String) {
         confirmationMode = false
-        if (noString.equals(command, ignoreCase = true)) {
+        if (isNoCommand(command)) {
             cancelAddOrDeleteMode()
-        } else if (yesString.equals(command, ignoreCase = true)) {
+        } else if (isYesCommand(command)) {
             if (deleteCredentialsIndex == null) {
                 addNewCredentialsAndExitAddMode(true)
             } else {
