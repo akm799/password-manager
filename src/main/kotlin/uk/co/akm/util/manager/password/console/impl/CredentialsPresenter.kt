@@ -15,9 +15,9 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     private var indexedCredentials: Map<Int, Credentials>
     private var indexedSelectedItems: Map<Int, Map.Entry<String, String>>? = null
 
-    private var newCredentialsData: NewCredentialsData? = null
-
     private var deleteCredentialsIndex: Int? = null
+    private var newCredentialsData: NewCredentialsData? = null
+    private var changePasswordData: ChangePasswordData? = null
 
     private var change = false
     private var confirmationMode = false
@@ -46,6 +46,8 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
             return DisplayState.SELECTED
         } else if (deleteCredentialsIndex != null) {
             return DisplayState.DELETE
+        } else if (changePasswordData != null) {
+            return DisplayState.PASSWORD
         } else {
             return DisplayState.ALL
         }
@@ -54,7 +56,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     override fun back(state: DisplayState) {
         when (state) {
             DisplayState.SELECTED -> { show() }
-            DisplayState.ADD, DisplayState.DELETE -> { cancelAddOrDeleteMode() }
+            DisplayState.ADD, DisplayState.DELETE, DisplayState.PASSWORD -> { cancelAddOrDeleteOrPasswordMode() }
             else -> { println(invalidBack) }
         }
     }
@@ -79,8 +81,9 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
 
     override fun showCommand(state: DisplayState, command: String) {
         when (state) {
-            DisplayState.ALL -> enterAddOrDeleteMode(command)
+            DisplayState.ALL -> enterAddOrDeleteOrPasswordMode(command)
             DisplayState.ADD -> processAddModeInput(command)
+            DisplayState.PASSWORD -> processChangePasswordModeInput(command)
             DisplayState.CONFIRM -> processPositiveConfirmationEntry(command)
         }
     }
@@ -96,8 +99,8 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
 
     override fun stringCommandIsValid(state: DisplayState, command: String): Boolean {
         return when (state) {
-            DisplayState.ALL -> isAddCommand(command) || isDeleteCommand(command)
-            DisplayState.ADD -> true
+            DisplayState.ALL -> isAddCommand(command) || isDeleteCommand(command) || isPasswordCommand(command)
+            DisplayState.ADD, DisplayState.PASSWORD -> true
             DisplayState.CONFIRM -> isConfirmCommand(command)
             else -> false
         }
@@ -126,16 +129,19 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         }
     }
 
-    private fun enterAddOrDeleteMode(command: String) {
+    private fun enterAddOrDeleteOrPasswordMode(command: String) {
         if (isAddCommand(command)) {
             enterAddMode()
         } else if (isDeleteCommand(command)) {
             enterDeleteMode()
+        } else if (isPasswordCommand(command)) {
+            enterChangePasswordMode()
         }
     }
 
     private fun enterAddMode() {
         indexedSelectedItems = null
+        deleteCredentialsIndex = null
         newCredentialsData = NewCredentialsData()
         println(addCredentialsInstruction)
     }
@@ -164,14 +170,14 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
                 addNewCredentialsAndExitAddMode()
             }
         } else {
-            cancelAddOrDeleteMode()
+            cancelAddOrDeleteOrPasswordMode()
         }
     }
 
     private fun processPositiveConfirmationEntry(command: String) {
         confirmationMode = false
         if (isNoCommand(command)) {
-            cancelAddOrDeleteMode()
+            cancelAddOrDeleteOrPasswordMode()
         } else if (isYesCommand(command)) {
             if (deleteCredentialsIndex == null) {
                 addNewCredentialsAndExitAddMode(true)
@@ -187,7 +193,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
             val action = if (overwrite) overwrittenAction else addedAction
             val credentialsToAdd = it.credentials
             addNewCredentials(credentialsToAdd)
-            exitAddOrDeleteMode(credentialsActionConfirmationMessage(credentialsToAdd.credentials.toString(), action))
+            exitAddOrDeleteOrPasswordMode(credentialsActionConfirmationMessage(credentialsToAdd.credentials.toString(), action))
         }
     }
 
@@ -210,9 +216,16 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         } ?: false
     }
 
-    private fun cancelAddOrDeleteMode() {
-        val message = if (deleteCredentialsIndex == null) addActionCancellationMessage else deleteActionCancellationMessage
-        exitAddOrDeleteMode(message)
+    private fun cancelAddOrDeleteOrPasswordMode() {
+        val state = determineState()
+        val message = when (state) {
+            DisplayState.ADD -> addActionCancellationMessage
+            DisplayState.DELETE -> deleteActionCancellationMessage
+            DisplayState.PASSWORD -> changePasswordActionCancellationMessage
+            else -> ""
+        }
+
+        exitAddOrDeleteOrPasswordMode(message)
     }
 
     private fun enterOverwriteConfirmationMode() {
@@ -221,6 +234,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     }
 
     private fun enterDeleteMode() {
+        indexedSelectedItems = null
         deleteCredentialsIndex = noIndex
         showCredentialsList()
         println(deleteActionSelectionInstruction)
@@ -237,7 +251,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         change = true
         deleteCredentials()
         val name = indexedCredentials[deleteCredentialsIndex]?.name
-        exitAddOrDeleteMode(deletionConfirmationMessage(name))
+        exitAddOrDeleteOrPasswordMode(deletionConfirmationMessage(name))
     }
 
     private fun deleteCredentials() {
@@ -245,10 +259,42 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         indexedCredentials = indexItems(remaining)
     }
 
-    private fun exitAddOrDeleteMode(message: String) {
-        println(message)
-        deleteCredentialsIndex = null
+    private fun enterChangePasswordMode() {
+        indexedSelectedItems = null
         newCredentialsData = null
+        deleteCredentialsIndex = null
+        changePasswordData = ChangePasswordData()
+        println(newPasswordInstruction)
+    }
+
+    private fun processChangePasswordModeInput(command: String) {
+        changePasswordData?.setNewPassword(command)
+
+        if (changePasswordData?.haveBothPasswords() ?: false) {
+            if (changePasswordData?.passwordConfirmed() ?: false) {
+                changePasswordData?.let { changePassword(it.password) }
+                exitAddOrDeleteOrPasswordMode(passwordChangedMessage)
+            } else {
+                println(passwordMismatchMessage)
+                println(newPasswordInstruction)
+            }
+
+            changePasswordData?.clear()
+        } else {
+            println(confirmNewPasswordInstruction)
+        }
+    }
+
+    private fun changePassword(password: String) {
+        //TODO
+        println("TODO Change the pass-phrase.")
+    }
+
+    private fun exitAddOrDeleteOrPasswordMode(message: String) {
+        println(message)
+        newCredentialsData = null
+        deleteCredentialsIndex = null
+        changePasswordData = null
         show()
     }
 

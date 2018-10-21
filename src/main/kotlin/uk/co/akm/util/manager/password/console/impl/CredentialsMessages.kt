@@ -18,6 +18,9 @@ private val deleteString = "$deleteChar"
 val helpChar = 'h'
 private val helpString = "$helpChar"
 
+val passwordChar = 'p'
+private val passwordString = "$passwordChar"
+
 val noChar = 'n'
 val yesChar = 'y'
 private val noString = "$noChar"
@@ -27,7 +30,7 @@ private val confirmationMessagePostfix = "Enter '$yesChar' to confirm the %s or 
 
 val invalidBack = "Invalid 'back' command."
 val emptyCredentialsListInstruction = "No credentials entered. Press '$addChar' to add or '${exitChar}' to exit."
-val credentialsListInstruction = "Select existing credentials or press '$addChar' to add, '$deleteChar' to delete or '$exitChar' to exit."
+val credentialsListInstruction = "Select existing credentials or press '$addChar' to add new credentials, '$deleteChar' to delete existing credentials, '$passwordChar' to change the password or '$exitChar' to exit."
 val selectedCredentialsInstruction = "Select credentials item to copy to clipboard, '${backChar}' to go back to display all the credentials or '$exitChar' to exit."
 val addCredentialsInstruction = "Enter the credential items in multiple lines and an empty line when you finish or enter '$backChar' to go back and cancel the add operation. For an example, enter '$helpChar' or '$exitChar' to exit."
 val addCredentialsHelpMessage = "Example help message."
@@ -35,7 +38,12 @@ val addedAction = "added"
 val overwrittenAction = "overwritten"
 val addActionCancellationMessage = "No new credentials added."
 val deleteActionCancellationMessage = "No credentials deleted."
+val changePasswordActionCancellationMessage = "No password changed."
 val deleteActionSelectionInstruction = "Select credentials to delete or enter '$backChar' to go back and cancel the delete operation."
+val newPasswordInstruction = "Please enter the new pass-phrase or '$backChar' to go back and cancel the change password operation."
+val confirmNewPasswordInstruction = "Please re-enter the new pass-phrase for confirmation or '$backChar' to go back and cancel the change password operation."
+val passwordMismatchMessage = "The pass-phrases entered do not match. The pass-phrase cannot be changed."
+val passwordChangedMessage = "The pass-phrase has been changed."
 
 fun selectedCredentialsHeader(selectedName: String): String = "Credentials for $selectedName:"
 
@@ -69,3 +77,5 @@ fun isConfirmCommand(command: String) : Boolean {
 
     return confirmStrings.contains(lowerCase) || confirmStrings.contains(upperCase)
 }
+
+fun isPasswordCommand(command: String): Boolean = isCommand(passwordString, command)
