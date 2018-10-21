@@ -3,8 +3,6 @@ package uk.co.akm.util.manager.password.console.impl
 import uk.co.akm.util.manager.password.clipboard.ClipboardService
 import uk.co.akm.util.manager.password.clipboard.ClipboardServiceImpl
 import uk.co.akm.util.manager.password.console.AbstractIndexedConsolePresenter
-import uk.co.akm.util.manager.password.console.backChar
-import uk.co.akm.util.manager.password.console.exitChar
 import uk.co.akm.util.manager.password.model.Credentials
 import java.util.*
 
@@ -57,17 +55,17 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         when (state) {
             DisplayState.SELECTED -> { show() }
             DisplayState.ADD, DisplayState.DELETE -> { cancelAddOrDeleteMode() }
-            else -> { println("Invalid 'back' command.") }
+            else -> { println(invalidBack) }
         }
     }
 
     override fun show() {
         indexedSelectedItems = null
         if (indexedCredentials.isEmpty()) {
-            println("No credentials entered. Press '$addChar' to add or '$exitChar' to exit.")
+            println(emptyCredentialsListInstruction)
         } else {
             showCredentialsList()
-            println("Select existing credentials or press '$addChar' to add, '$deleteChar' to delete or '$exitChar' to exit.")
+            println(credentialsListInstruction)
         }
     }
 
@@ -114,9 +112,9 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     }
 
     private fun showSelectedCredentials(selectedName: String, selectedItems: Map<Int, Map.Entry<String, String>>) {
-        println("Credentials for $selectedName:")
+        println(selectedCredentialsHeader(selectedName))
         selectedItems.forEach {  println("${it.key}) ${it.value.key}") }
-        println("Select credentials item to copy to clipboard, '$backChar' to go back to display all the credentials or '$exitChar' to exit.")
+        println(selectedCredentialsInstruction)
     }
 
     private fun processCredentialsItemSelection(selectionIndex: Int) {
@@ -124,7 +122,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
             val itemName = it[selectionIndex]?.key
             val itemValue = it[selectionIndex]?.value
             itemValue?.let { clipboardService.store(it) }
-            println("$itemName copied to the clipboard.")
+            println(copiedToClipboardMessage(itemName))
         }
     }
 
@@ -139,12 +137,12 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     private fun enterAddMode() {
         indexedSelectedItems = null
         newCredentialsData = NewCredentialsData()
-        println("Enter the credential items in multiple lines and an empty line when you finish or enter '$backChar' to go back and cancel the add operation. For an example, enter '$helpChar' or '$exitChar' to exit.")
+        println(addCredentialsInstruction)
     }
 
     private fun processAddModeInput(command: String) {
         if (isHelpCommand(command)) {
-            println(helpMessage)
+            println(addCredentialsHelpMessage)
         } else {
             processCredentialsItemEntry(command)
         }
@@ -186,10 +184,10 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     private fun addNewCredentialsAndExitAddMode(overwrite: Boolean = false) {
         newCredentialsData?.let {
             change = true
-            val action = if (overwrite) "overwritten" else "added"
+            val action = if (overwrite) overwrittenAction else addedAction
             val credentialsToAdd = it.credentials
             addNewCredentials(credentialsToAdd)
-            exitAddOrDeleteMode("Credentials for '${credentialsToAdd.credentials}' have been $action.")
+            exitAddOrDeleteMode(credentialsActionConfirmationMessage(credentialsToAdd.credentials.toString(), action))
         }
     }
 
@@ -213,33 +211,33 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     }
 
     private fun cancelAddOrDeleteMode() {
-        val message = if (deleteCredentialsIndex == null) "No new credentials added." else "No credentials deleted."
+        val message = if (deleteCredentialsIndex == null) addActionCancellationMessage else deleteActionCancellationMessage
         exitAddOrDeleteMode(message)
     }
 
     private fun enterOverwriteConfirmationMode() {
         confirmationMode = true
-        println("Overwrite existing credentials? Enter 'y' to confirm the overwrite or 'n' to cancel.")
+        println(confirmOverwriteAction())
     }
 
     private fun enterDeleteMode() {
         deleteCredentialsIndex = noIndex
         showCredentialsList()
-        println("Select credentials to delete or enter '$backChar' to go back and cancel the delete operation.")
+        println(deleteActionSelectionInstruction)
     }
 
     private fun processDeleteCredentialsItemSelection(selectionIndex: Int) {
         deleteCredentialsIndex = selectionIndex
         confirmationMode = true
         val name = indexedCredentials[selectionIndex]?.name
-        println("Delete credentials for '$name'? Enter 'y' to confirm the overwrite or 'n' to cancel.")
+        println(confirmDeleteAction(name))
     }
 
     private fun deleteCredentialsAndExitDeleteMode() {
         change = true
         deleteCredentials()
         val name = indexedCredentials[deleteCredentialsIndex]?.name
-        exitAddOrDeleteMode("Credentials for '$name' have been deleted.")
+        exitAddOrDeleteMode(deletionConfirmationMessage(name))
     }
 
     private fun deleteCredentials() {
