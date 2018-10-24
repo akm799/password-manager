@@ -10,6 +10,8 @@ abstract class AbstractConsolePresenter<S> {
 
     abstract val state: S
 
+    private var hideInput = false
+
     /**
      * Launches the console presenter.
      */
@@ -22,7 +24,7 @@ abstract class AbstractConsolePresenter<S> {
         var listen = true
 
         while (listen) {
-            val command = readInputLine()
+            val command = readInputLine(hideInput)
             if (isExitCommand(command)) {
                 listen = false
             } else if (isBackCommand(command)) {
@@ -61,4 +63,12 @@ abstract class AbstractConsolePresenter<S> {
      * Implementations of this method should perform any clean-up operations just before we exit.
      */
     abstract fun onExit()
+
+    fun showInput() {
+        hideInput = false
+    }
+
+    fun hideInput() {
+        hideInput = true
+    }
 }

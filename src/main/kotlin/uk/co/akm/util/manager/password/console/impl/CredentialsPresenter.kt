@@ -264,6 +264,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         newCredentialsData = null
         deleteCredentialsIndex = null
         changePasswordData = ChangePasswordData()
+        hideInput()
         println(newPasswordInstruction)
     }
 
@@ -295,6 +296,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
         newCredentialsData = null
         deleteCredentialsIndex = null
         changePasswordData = null
+        showInput()
         show()
     }
 
@@ -312,6 +314,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     }
 
     override fun onExit() {
+        showInput()
         clipboardService.clear()
     }
 }

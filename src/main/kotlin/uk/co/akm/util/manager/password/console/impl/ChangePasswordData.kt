@@ -8,7 +8,13 @@ class ChangePasswordData {
     private var newPasswordConfirmation: String? = null
 
     val password: String
-        get() = newPasswordConfirmation ?: throw IllegalAccessException("New password has not been set.")
+        get() {
+            if (haveBothPasswords() && passwordConfirmed()) {
+                return newPassword ?: throw IllegalAccessException("New password has not been set.")
+            } else {
+                throw IllegalAccessException("New password has not been set and confirmed.")
+            }
+        }
 
     fun setNewPassword(password: String) {
         if (newPassword == null) {
