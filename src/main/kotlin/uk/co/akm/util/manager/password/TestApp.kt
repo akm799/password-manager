@@ -11,7 +11,11 @@ fun main(args: Array<String>) {
     val charlie = Credentials("Charlie", mapOf(Pair("url", "http://www.mysite.com"), Pair("username", "jake"), Pair("password", "some word")))
     val credentials = arrayListOf(alpha, bravo, charlie)
 
+    val dummySave = { credentials: Collection<Credentials>, newPassword: String ->
+        println("Dummy operation for testing: no credentials saved.")
+    }
+
     println("Test")
-    val presenter = CredentialsPresenter(credentials)
+    val presenter = CredentialsPresenter(credentials, dummySave)
     presenter.launch()
 }

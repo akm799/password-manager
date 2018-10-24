@@ -13,14 +13,18 @@ fun main(args: Array<String>) {
     val password = readPassword()
     val file = findOrCreateStoreFile()
 
-    val cryptoService = CryptoService.aesGcmInstance(password)
-    val credentialsStore = CredentialsStore.encryptedInstance(cryptoService)
+    var credentialsStore = buildCredentialsStore(password)
+
+    val save = { credentials: Collection<Credentials>, newPassword: String ->
+        credentialsStore = buildCredentialsStore(newPassword)
+        credentialsStore.write(credentials, file)
+    }
 
     try {
         val credentials = credentialsStore.read(file)
         println("Credentials read from ${file.absolutePath}")
 
-        val presenter = CredentialsPresenter(credentials)
+        val presenter = CredentialsPresenter(credentials, save)
         presenter.launch()
 
         if (presenter.haveChanges) {
@@ -45,4 +49,10 @@ private fun readPassword(): String {
 private fun exit() {
     System.err.println("The pass-phrase cannot be blank or empty.")
     System.exit(1)
+}
+
+private fun buildCredentialsStore(password: String): CredentialsStore {
+    val cryptoService = CryptoService.aesGcmInstance(password)
+
+    return CredentialsStore.encryptedInstance(cryptoService)
 }

@@ -9,7 +9,7 @@ import java.util.*
 /**
  * Created by Thanos Mavroidis on 24/09/2018.
  */
-class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexedConsolePresenter<DisplayState>() {
+class CredentialsPresenter(credentials: Collection<Credentials>, private val save: (credentials: Collection<Credentials>, passphrase: String) -> Unit): AbstractIndexedConsolePresenter<DisplayState>() {
     private val noIndex = -1
 
     private var indexedCredentials: Map<Int, Credentials>
@@ -287,8 +287,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>): AbstractIndexe
     }
 
     private fun changePassword(password: String) {
-        //TODO
-        println("TODO Change the pass-phrase.")
+        save(credentials, password)
     }
 
     private fun exitAddOrDeleteOrPasswordMode(message: String) {
