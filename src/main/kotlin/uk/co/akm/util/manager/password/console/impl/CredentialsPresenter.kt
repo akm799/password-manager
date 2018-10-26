@@ -3,13 +3,17 @@ package uk.co.akm.util.manager.password.console.impl
 import uk.co.akm.util.manager.password.clipboard.ClipboardService
 import uk.co.akm.util.manager.password.clipboard.ClipboardServiceImpl
 import uk.co.akm.util.manager.password.console.AbstractIndexedConsolePresenter
+import uk.co.akm.util.manager.password.io.CredentialsStoreHandle
 import uk.co.akm.util.manager.password.model.Credentials
 import java.util.*
 
 /**
  * Created by Thanos Mavroidis on 24/09/2018.
  */
-class CredentialsPresenter(credentials: Collection<Credentials>, private val save: (credentials: Collection<Credentials>, passphrase: String) -> Unit): AbstractIndexedConsolePresenter<DisplayState>() {
+class CredentialsPresenter(
+        credentials: Collection<Credentials>,
+        private val credentialsStoreHandle: CredentialsStoreHandle
+) : AbstractIndexedConsolePresenter<DisplayState>() {
     private val noIndex = -1
 
     private var indexedCredentials: Map<Int, Credentials>
@@ -130,12 +134,17 @@ class CredentialsPresenter(credentials: Collection<Credentials>, private val sav
     }
 
     private fun enterAddOrDeleteOrPasswordMode(command: String) {
-        if (isAddCommand(command)) {
-            enterAddMode()
-        } else if (isDeleteCommand(command)) {
-            enterDeleteMode()
-        } else if (isPasswordCommand(command)) {
-            enterChangePasswordMode()
+        if (credentialsStoreHandle.canSave()) {
+            if (isAddCommand(command)) {
+                enterAddMode()
+            } else if (isDeleteCommand(command)) {
+                enterDeleteMode()
+            } else if (isPasswordCommand(command)) {
+                enterChangePasswordMode()
+            }
+        } else {
+            println(noModificationsAllowed(credentialsStoreHandle.filePath()))
+            show()
         }
     }
 
@@ -287,7 +296,7 @@ class CredentialsPresenter(credentials: Collection<Credentials>, private val sav
     }
 
     private fun changePassword(password: String) {
-        save(credentials, password)
+        credentialsStoreHandle.save(credentials, password)
     }
 
     private fun exitAddOrDeleteOrPasswordMode(message: String) {

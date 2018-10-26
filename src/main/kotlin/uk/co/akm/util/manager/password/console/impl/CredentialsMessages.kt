@@ -59,6 +59,8 @@ private fun confirmQuestionMessage(question: String, action: String): String = "
 
 fun deletionConfirmationMessage(name: String?) = "Credentials for '$name' have been deleted."
 
+fun noModificationsAllowed(filePath: String): String = "Unable to make any modifications because the file '$filePath' is in read-only mode. Please enable write mode on that file before attempting any modifications."
+
 
 
 fun isAddCommand(command: String) = isCommand(addString, command)

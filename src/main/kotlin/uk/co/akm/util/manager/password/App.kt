@@ -1,34 +1,23 @@
 package uk.co.akm.util.manager.password
 
 import uk.co.akm.util.manager.password.console.impl.CredentialsPresenter
-import uk.co.akm.util.manager.password.crypto.CryptoService
 import uk.co.akm.util.manager.password.exceptions.CredentialsParseException
-import uk.co.akm.util.manager.password.io.CredentialsStore
-import uk.co.akm.util.manager.password.io.findOrCreateStoreFile
-import uk.co.akm.util.manager.password.io.readInputLine
-import uk.co.akm.util.manager.password.model.Credentials
-import java.io.File
+import uk.co.akm.util.manager.password.io.*
 
 fun main(args: Array<String>) {
     val password = readPassword()
     val file = findOrCreateStoreFile()
-
-    var credentialsStore = buildCredentialsStore(password)
-
-    val save = { credentials: Collection<Credentials>, newPassword: String ->
-        credentialsStore = buildCredentialsStore(newPassword)
-        credentialsStore.write(credentials, file)
-    }
+    val storeHandle: CredentialsStoreHandle = CredentialsStoreHandleImpl(password, file)
 
     try {
-        val credentials = credentialsStore.read(file)
+        val credentials = storeHandle.read()
         println("Credentials read from ${file.absolutePath}")
 
-        val presenter = CredentialsPresenter(credentials, save)
+        val presenter = CredentialsPresenter(credentials, storeHandle)
         presenter.launch()
 
         if (presenter.haveChanges) {
-            credentialsStore.write(presenter.credentials, file)
+            storeHandle.save(presenter.credentials)
             println("Credentials saved in ${file.absolutePath}")
         }
     } catch (cpe: CredentialsParseException) {
@@ -49,10 +38,4 @@ private fun readPassword(): String {
 private fun exit() {
     System.err.println("The pass-phrase cannot be blank or empty.")
     System.exit(1)
-}
-
-private fun buildCredentialsStore(password: String): CredentialsStore {
-    val cryptoService = CryptoService.aesGcmInstance(password)
-
-    return CredentialsStore.encryptedInstance(cryptoService)
 }
