@@ -158,6 +158,8 @@ class CredentialsPresenter(
     private fun processAddModeInput(command: String) {
         if (isHelpCommand(command)) {
             println(addCredentialsHelpMessage)
+            println()
+            println(addCredentialsInstruction)
         } else {
             processCredentialsItemEntry(command)
         }

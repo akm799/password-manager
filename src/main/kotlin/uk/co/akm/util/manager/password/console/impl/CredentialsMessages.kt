@@ -33,7 +33,6 @@ val emptyCredentialsListInstruction = "No credentials entered. Press '$addChar' 
 val credentialsListInstruction = "Select existing credentials or press '$addChar' to add new credentials, '$deleteChar' to delete existing credentials, '$passwordChar' to change the password or '$exitChar' to exit."
 val selectedCredentialsInstruction = "Select credentials item to copy to clipboard, '${backChar}' to go back to display all the credentials or '$exitChar' to exit."
 val addCredentialsInstruction = "Enter the credential items in multiple lines and an empty line when you finish or enter '$backChar' to go back and cancel the add operation. For an example, enter '$helpChar' or '$exitChar' to exit."
-val addCredentialsHelpMessage = "Example help message."
 val addedAction = "added"
 val overwrittenAction = "overwritten"
 val addActionCancellationMessage = "No new credentials added."
@@ -81,3 +80,16 @@ fun isConfirmCommand(command: String) : Boolean {
 }
 
 fun isPasswordCommand(command: String): Boolean = isCommand(passwordString, command)
+
+val addCredentialsHelpMessage = """Example for adding credentials:
+If you have a Gmail email which is 'jsmith@gmail.com' and your password is 'very-secret' then to add these credentials, you enter them as follows:
+Gmail
+login name
+jsmith
+password
+very-secret
+
+The last blank line indicates that all credentials have been entered. After that, a new credentials item, called 'Gmail' will appear in the credentials list. If you select it, then it will show as:
+Credentials for Gmail:
+1) login name
+2) password"""
