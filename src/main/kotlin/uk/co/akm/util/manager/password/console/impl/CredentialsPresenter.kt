@@ -204,7 +204,7 @@ class CredentialsPresenter(
             val action = if (overwrite) overwrittenAction else addedAction
             val credentialsToAdd = it.credentials
             addNewCredentials(credentialsToAdd)
-            exitAddOrDeleteOrPasswordMode(credentialsActionConfirmationMessage(credentialsToAdd.credentials.toString(), action))
+            exitAddOrDeleteOrPasswordMode(credentialsActionConfirmationMessage(credentialsToAdd.name, action))
         }
     }
 

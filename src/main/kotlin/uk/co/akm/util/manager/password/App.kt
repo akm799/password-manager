@@ -5,7 +5,7 @@ import uk.co.akm.util.manager.password.exceptions.CredentialsParseException
 import uk.co.akm.util.manager.password.io.*
 
 fun main(args: Array<String>) {
-    val password = readPassword()
+    val password = readPassword(args)
     val file = findOrCreateStoreFile()
     val storeHandle: CredentialsStoreHandle = CredentialsStoreHandleImpl(password, file)
 
@@ -23,19 +23,4 @@ fun main(args: Array<String>) {
     } catch (cpe: CredentialsParseException) {
         System.err.println("Incorrect pass-phrase.")
     }
-}
-
-private fun readPassword(): String {
-    println("Please enter the pass-phrase:")
-    val password = readInputLine(true).trim()
-    if (password.isEmpty() || password.isBlank()) {
-        exit()
-    }
-
-    return password
-}
-
-private fun exit() {
-    System.err.println("The pass-phrase cannot be blank or empty.")
-    System.exit(1)
 }

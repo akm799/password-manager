@@ -29,7 +29,6 @@ class CredentialsStoreTest {
         val credentials = underTest.read(file)
         Assert.assertNotNull(credentials)
         Assert.assertTrue(credentials.isEmpty())
-
     }
 
     @Test

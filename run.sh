@@ -5,9 +5,9 @@ if [ ! -f $EXE_FILE ]; then
     if [ ! -f $EXE_FILE ]; then
         echo "Cannot start due to a build error."
     else
-        java -jar $EXE_FILE
+        java -jar $EXE_FILE $1
     fi
 else
     clear
-    java -jar $EXE_FILE
+    java -jar $EXE_FILE $1
 fi
