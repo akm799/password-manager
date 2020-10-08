@@ -71,13 +71,18 @@ class EncryptedCredentialsStore(private val cryptoService: CryptoService) : Cred
     }
 
     override fun write(credentials: Collection<Credentials>, file: File) {
-        if (credentials.isNotEmpty()) {
-            val content = toLines(credentials).joinToString(separator = "\n")
-            val bytes = content.toByteArray(utf8)
-            val encryptedBytes = cryptoService.encrypt(bytes)
-
-            file.writeBytes(encryptedBytes)
+        val encryptedBytes = if (credentials.isNotEmpty()) {
+            cryptoService.encrypt(toBytes(credentials))
+        } else {
+            ByteArray(0)
         }
+
+        file.writeBytes(encryptedBytes)
+    }
+
+    private fun toBytes(credentials: Collection<Credentials>): ByteArray {
+        val content = toLines(credentials).joinToString(separator = "\n")
+        return content.toByteArray(utf8)
     }
 
     private fun toLines(credentials: Collection<Credentials>): Collection<String> {

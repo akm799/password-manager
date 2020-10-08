@@ -260,8 +260,8 @@ class CredentialsPresenter(
 
     private fun deleteCredentialsAndExitDeleteMode() {
         change = true
-        deleteCredentials()
         val name = indexedCredentials[deleteCredentialsIndex]?.name
+        deleteCredentials()
         exitAddOrDeleteOrPasswordMode(deletionConfirmationMessage(name))
     }
 
