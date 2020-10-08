@@ -29,4 +29,10 @@ class NewCredentialsData {
     }
 
     fun haveNewCredentials(): Boolean = (newCredentialsName != null && newCredentials.isNotEmpty())
+
+    fun noNameEntered(): Boolean = (newCredentialsName == null)
+
+    fun noKeyEntered(): Boolean = (newCredentialsKey == null)
+
+    fun lastKeyEntered(): String = newCredentialsKey ?: ""
 }

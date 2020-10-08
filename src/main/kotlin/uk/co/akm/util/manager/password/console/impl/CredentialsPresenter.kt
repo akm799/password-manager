@@ -153,6 +153,7 @@ class CredentialsPresenter(
         deleteCredentialsIndex = null
         newCredentialsData = NewCredentialsData()
         println(addCredentialsInstruction)
+        println(buildCredentialsEntryLineExplanationMessage())
     }
 
     private fun processAddModeInput(command: String) {
@@ -160,9 +161,23 @@ class CredentialsPresenter(
             println(addCredentialsHelpMessage)
             println()
             println(addCredentialsInstruction)
+            println(buildCredentialsEntryLineExplanationMessage())
         } else {
             processCredentialsItemEntry(command)
+            println(buildCredentialsEntryLineExplanationMessage())
         }
+    }
+
+    private fun buildCredentialsEntryLineExplanationMessage(): String {
+        return newCredentialsData?.let {
+            if (it.noNameEntered()) {
+                addCredentialsNameInstruction
+            } else if (it.noKeyEntered()) {
+                if (it.haveNewCredentials()) addCredentialsOtherKeyInstruction else addCredentialsFirstKeyInstruction
+            } else {
+                String.format(addCredentialsValueInstruction, it.lastKeyEntered())
+            }
+        } ?: addCredentialsNameInstruction
     }
 
     private fun processCredentialsItemEntry(line: String) {
