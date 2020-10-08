@@ -44,7 +44,7 @@ val confirmNewPasswordInstruction = "Please re-enter the new pass-phrase for con
 val passwordMismatchMessage = "The pass-phrases entered do not match. The pass-phrase cannot be changed."
 val passwordChangedMessage = "The pass-phrase has been changed."
 
-fun selectedCredentialsHeader(selectedName: String): String = "Credentials for $selectedName:"
+fun selectedCredentialsHeader(selectedName: String): String = "Credentials for '$selectedName':"
 
 fun copiedToClipboardMessage(itemName: String?) = "$itemName copied to the clipboard."
 
