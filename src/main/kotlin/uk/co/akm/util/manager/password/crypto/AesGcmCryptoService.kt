@@ -23,6 +23,8 @@ import javax.crypto.spec.SecretKeySpec
  *
  * https://proandroiddev.com/security-best-practices-symmetric-encryption-with-aes-in-java-7616beaaade9
  *
+ * https://stackoverflow.com/questions/18228579/how-to-create-a-secure-random-aes-key-in-java
+ *
  * Created by Thanos Mavroidis on 28/09/2018.
  */
 class AesGcmCryptoService(password: String) : CryptoService {
